@@ -44,13 +44,16 @@ class DBHelper:
             CREATE TABLE IF NOT EXISTS seasons (
                 season_id INT AUTO_INCREMENT PRIMARY KEY,
                 season_name VARCHAR(20) NOT NULL UNIQUE,
-                months_range VARCHAR(50),
+                month_start INT,
+                month_end INT,
                 tourism_level VARCHAR(20),
                 avg_temp_c FLOAT,
                 avg_precip_mm FLOAT,
                 avg_humidity_pct FLOAT,
                 avg_cloud_cover_pct FLOAT,
-                rainy_days_per_month INT
+                rainy_days_per_month INT,
+                climate_description TEXT,
+                key_features VARCHAR(255)
             ) ENGINE=InnoDB;
             """,
 
@@ -133,12 +136,38 @@ class DBHelper:
             raise
         finally:
             cursor.close()
+            
     
-    
-    
-        
-    
+    # Method to insert season data into the 'seasons' table
+    def insert_season(self, name, start, end, tourism, temp, precip, humidity, cloud, rainy_days, features):
+        cursor = self.mydb.cursor()
+        query = """
+        INSERT INTO seasons 
+        (season_name, month_start, month_end, tourism_level, avg_temp_c, 
+        avg_precip_mm, avg_humidity_pct, avg_cloud_cover_pct, rainy_days_per_month, key_features)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            month_start = VALUES(month_start),
+            month_end = VALUES(month_end),
+            tourism_level = VALUES(tourism_level),
+            avg_temp_c = VALUES(avg_temp_c),
+            avg_precip_mm = VALUES(avg_precip_mm),
+            avg_humidity_pct = VALUES(avg_humidity_pct),
+            avg_cloud_cover_pct = VALUES(avg_cloud_cover_pct),
+            rainy_days_per_month = VALUES(rainy_days_per_month),
+            key_features = VALUES(key_features);
+        """
+        try:
+            # We wrap the variables in a single tuple for the execute command
+            values = (name, start, end, tourism, temp, precip, humidity, cloud, rainy_days, features)
+            cursor.execute(query, values)
+            self.mydb.commit()
+            return True
+        except Exception as e:
+            print(f"DB Insert Error: {e}")
+            return False
 
+    # Utility methods for debugging and verification
     def print_databases(self):
         print("Fetching and printing all databases...")
         self.mycursor.execute("SHOW DATABASES")
@@ -151,3 +180,15 @@ class DBHelper:
         self.mycursor.execute("SHOW TABLES")
         for table in self.mycursor:
             print(table)
+    
+    def delete_database(self, database_name):
+        cursor = self.mydb.cursor()
+        try:
+            cursor.execute(f"DROP DATABASE IF EXISTS {database_name}")
+            self.mydb.commit()
+            print(f"Database '{database_name}' deleted successfully.")
+        except Exception as e:
+            print(f"Failed to delete database '{database_name}': {e}")
+            raise
+        finally:
+            cursor.close()
