@@ -2,8 +2,8 @@ import calendar as cal
 
 import pandas as pd
 import docx2txt
-import re
 import os
+from doc_processor import DocProcessor
 
 class DateConverter:
     @staticmethod
@@ -38,16 +38,11 @@ class WeatherFileReader:
         try:
             df = pd.read_excel(file_path, sheet_name="Seasonal Summary", skiprows=3)
             print(f"Excel file '{file_name}' read successfully.")
-            print("Detected Columns:", df.columns.tolist())
+            print("Iterating through rows to insert season data into database...")
             for _, row in df.iterrows():
-                print(f"Processing row: {row.to_dict()}")
-                # Here you would typically call a method to insert this data into the database
-                # For example: db_helper.insert_season(row['Season'], row['Month Start'], row['Month End'], row['Tourism Level'], row['Avg Temp'])  
-                
                 months_range = row['Months'].split('–')
                 month_start = DateConverter.to_number(months_range[0].strip())
                 month_end = DateConverter.to_number(months_range[1].strip())
-                print(f"Converted Months: {months_range[0].strip()} -> {month_start}, {months_range[1].strip()} -> {month_end}")
                 
                 success = self.db_helper.insert_season(
                     name=row['Season'],
@@ -65,7 +60,8 @@ class WeatherFileReader:
                     print(f"Inserted season '{row['Season']}' into database successfully.")
                 else:
                     print(f"Failed to insert season '{row['Season']}' into database.")
-                
+            print("Excel file processing completed.")
+            print("Data from Excel file stored in the database successfully.")
             return df
         except Exception as e:
             print(f"Error reading Excel file '{file_name}': {e}")
@@ -79,23 +75,16 @@ class WeatherFileReader:
         try:
             full_text = docx2txt.process(file_path)
             print(f"Word file '{file_name}' read successfully.")
-            print("Extracted Text:", full_text[:500])  # Print the first 500
-            
-            seasons = ["Winter", "Pre-Monsoon", "Monsoon", "Post-Monsoon"]
-            
-            for i, seasons in enumerate(seasons):
-                next_target = seasons[i + 1] if i + 1 < len(seasons) else '$'
-                pattern = rf"{seasons}(.*?){next_target}"
-                
-                match = re.search(pattern, full_text, re.I)
-                
-                if match:
-                    # clean up text
-                    raw_text = match.group(1).strip()
-                    
-                    clean_text = re.sub(r'^\W+|\W+$', '', raw_text)
-                    print(f"Extracted text for {seasons} season: {clean_text[:200]}")  # Print the first 200 characters
-                else:
-                    print(f"Season '{seasons}' not found in the document.")
+            print("Starting season extraction...")
+            doc_processor = DocProcessor(full_text)
+            seasons_data = doc_processor.extract_season_info()
+            print("Season Data Extraction Completed")
+            print("Saving season data to database...")
+            result = doc_processor.save_season_data(self.db_helper, seasons_data)
+            if result:
+                print("All season data saved to database successfully.")
+                print("Process Word File completed.")
+            else:
+                print("Failed to save some or all season data to database.")
         except Exception as e:
-            print(f"Error reading Word file '{file_name}': {e}")    
+            print(f"Error reading Word file '{file_name}': {e}")

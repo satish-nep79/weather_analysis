@@ -19,13 +19,16 @@ def initializeApp():
     db_host = os.getenv("DB_HOST")
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")
-    print("Database credentials loaded successfully... ")
+    print("Environment variables loaded successfully... ")
     
     # Creating an instance of DBHelper with the loaded credentials
+    print("Setting up database......")
     db_helper = DBHelper(db_host, db_user, db_password)
     db_helper.prepare_database(os.getenv("DB_NAME"))
+    print("Database setup completed successfully... ")
     
     #Reading baseline data from Excel file
+    print("Processing Data From different sources...")
     file_reader = WeatherFileReader(db_helper)
     file_reader.process_excel_baseline("pokhara_weather_seasonal_analysis.xlsx")
     file_reader.process_docx("pokhara_climate_report.docx")

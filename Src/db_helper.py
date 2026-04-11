@@ -1,17 +1,18 @@
 import mysql.connector
+import json
 
 class DBHelper:
     
     
     def __init__(self, host, user, password):
         # Establishing a connection to the MySQL database using the provided credentials
-        print("Establishing a connection to the MySQL database...")
+        print("Connecting to Database...")
         self.mydb = mysql.connector.connect(
             host=host,
             user=user,
             password=password
         )
-        print("Connection to the MySQL database established successfully...")
+        print("Database connection established")
         self.mycursor = self.mydb.cursor()
         
         
@@ -22,6 +23,7 @@ class DBHelper:
     # - Handling any exceptions that may occur during the database setup process and providing appropriate feedback
     # This method ensures that the database is ready for use before any further operations are performed.
     def prepare_database(self, database_name):
+        print(f"Setting up database '{database_name}'...")
         cursor = self.mydb.cursor()
         try:
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
@@ -38,9 +40,9 @@ class DBHelper:
         cursor = self.mydb.cursor()
         
         # SQL commands to create necessary tables and define relationships
-        queries = [
+        queries = {
             # 1. SEASONS (Independent)
-            """
+            "seasons": """
             CREATE TABLE IF NOT EXISTS seasons (
                 season_id INT AUTO_INCREMENT PRIMARY KEY,
                 season_name VARCHAR(20) NOT NULL UNIQUE,
@@ -53,12 +55,13 @@ class DBHelper:
                 avg_cloud_cover_pct FLOAT,
                 rainy_days_per_month INT,
                 climate_description TEXT,
+                season_highlights TEXT,
                 key_features VARCHAR(255)
             ) ENGINE=InnoDB;
             """,
 
             # 2. CLIMATE BASELINE (Independent - Monthly Norms)
-            """
+            "climate_baseline": """
             CREATE TABLE IF NOT EXISTS climate_baseline (
                 baseline_id INT AUTO_INCREMENT PRIMARY KEY,
                 month INT NOT NULL UNIQUE,
@@ -75,7 +78,7 @@ class DBHelper:
             """,
 
             # 3. MONTHLY HISTORICAL (Dependent on Seasons)
-            """
+            "monthly_historical": """
             CREATE TABLE IF NOT EXISTS monthly_historical (
                 record_id INT AUTO_INCREMENT PRIMARY KEY,
                 season_id INT NULL,
@@ -96,7 +99,7 @@ class DBHelper:
             """,
 
             # 4. DAILY FORECAST (Dependent on Seasons)
-            """
+            "daily_forecast": """
             CREATE TABLE IF NOT EXISTS daily_forecast (
                 forecast_id INT AUTO_INCREMENT PRIMARY KEY,
                 season_id INT NULL,
@@ -123,14 +126,15 @@ class DBHelper:
                 FOREIGN KEY (season_id) REFERENCES seasons(season_id) ON DELETE SET NULL
             ) ENGINE=InnoDB;
             """
-        ]
+        }
         
         try:
-            for command in queries:
+            print("Checking and initializing database schema...")
+            for table_name, command in queries.items():
                 cursor.execute(command)
+                print(f"Table '{table_name}' is ready.")
             self.mydb.commit()
-            print("Database schema initialized successfully.")
-            self.print_tables(database_name=self.mydb.database)
+            print("Database schema secured ... clear")
         except Exception as e:
             print(f"Database schema initialization failed: {e}")
             raise
@@ -166,6 +170,38 @@ class DBHelper:
         except Exception as e:
             print(f"DB Insert Error: {e}")
             return False
+    
+    # Update Method
+    # Updates season row with climate description and highlights based on season name
+    def update_season_description(self, season_name, climate_description, season_highlights):
+        cursor = self.mydb.cursor()
+        query = """
+            UPDATE seasons
+            SET climate_description = %s,
+                season_highlights   = %s
+            WHERE season_name = %s
+        """
+        try:
+            # Check if season_highlights is a string and convert it to a list if necessary
+            if isinstance(season_highlights, str):
+                season_highlights = [season_highlights]
+            
+            # If season_highlights is not a list (e.g., None or other type), set it to an empty list
+            if not isinstance(season_highlights, list):
+                season_highlights= []    
+            
+            cursor.execute(query, (climate_description, json.dumps(season_highlights), season_name))
+            self.mydb.commit()
+            if cursor.rowcount == 0:
+                print(f"Warning: '{season_name}' not found — run insert_season first.")
+                return False
+            print(f"Description updated for: {season_name}")
+            return True
+        except Exception as e:
+            print(f"Failed to update '{season_name}': {e}")
+            return False
+        finally:
+            cursor.close()
 
     # Utility methods for debugging and verification
     def print_databases(self):
@@ -181,6 +217,7 @@ class DBHelper:
         for table in self.mycursor:
             print(table)
     
+    # TODO: remove method to delete database after testing is complete
     def delete_database(self, database_name):
         cursor = self.mydb.cursor()
         try:
