@@ -202,6 +202,64 @@ class DBHelper:
             return False
         finally:
             cursor.close()
+    # Method to fetch season information based on month
+    def get_season_by_month(self, month):
+        cursor = self.mydb.cursor(dictionary=True)
+        query = """
+            SELECT * FROM seasons
+            WHERE
+                -- Normal case: start <= end (e.g. Pre-Monsoon: 3 to 5)
+                (month_start <= month_end AND %s BETWEEN month_start AND month_end)
+                OR
+                -- Wrap-around case: start > end (e.g. Winter: 12 to 2)
+                (month_start > month_end AND (%s >= month_start OR %s <= month_end))
+        """
+        try:
+            cursor.execute(query, (month, month, month))
+            result = cursor.fetchone()
+            if not result:
+                print(f"No season found for month {month}")
+            return result
+        except Exception as e:
+            print(f"Failed to fetch season for month {month}: {e}")
+            return None
+        finally:
+            cursor.close()
+    
+    # Method to insert monthly historical data into the 'monthly_historical' table
+    def insert_monthly_record(self, season_id, year, month, month_name, avg_temp_c, max_temp_c,
+                           min_temp_c, total_precip_mm, avg_humidity_pct,
+                           avg_wind_spd_ms, avg_cloud_cover_pct, rainy_days, season):
+        cursor = self.mydb.cursor()
+        query = """
+            INSERT INTO monthly_historical
+            (season_id, year, month, month_name, avg_temp_c, max_temp_c, min_temp_c,
+            total_precip_mm, avg_humidity_pct, avg_wind_spd_ms,
+            avg_cloud_cover_pct, rainy_days)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                season_id           = VALUES(season_id),
+                avg_temp_c          = VALUES(avg_temp_c),
+                max_temp_c          = VALUES(max_temp_c),
+                min_temp_c          = VALUES(min_temp_c),
+                total_precip_mm     = VALUES(total_precip_mm),
+                avg_humidity_pct    = VALUES(avg_humidity_pct),
+                avg_wind_spd_ms     = VALUES(avg_wind_spd_ms),
+                avg_cloud_cover_pct = VALUES(avg_cloud_cover_pct),
+                rainy_days          = VALUES(rainy_days);
+        """
+        try:
+            values = (season_id, year, month, month_name, avg_temp_c, max_temp_c, min_temp_c,
+                    total_precip_mm, avg_humidity_pct, avg_wind_spd_ms,
+                    avg_cloud_cover_pct, rainy_days)
+            cursor.execute(query, values)
+            self.mydb.commit()
+            return True
+        except Exception as e:
+            print(f"Insert error ({year}-{month}): {e}")
+            return False
+        finally:
+            cursor.close()
 
     # Utility methods for debugging and verification
     def print_databases(self):

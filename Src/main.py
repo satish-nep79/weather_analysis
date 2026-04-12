@@ -25,6 +25,7 @@ def initializeApp():
     print("Setting up database......")
     db_helper = DBHelper(db_host, db_user, db_password)
     db_helper.prepare_database(os.getenv("DB_NAME"))
+    # db_helper.delete_database(os.getenv("DB_NAME"))
     print("Database setup completed successfully... ")
     
     #Reading baseline data from Excel file
@@ -32,6 +33,7 @@ def initializeApp():
     file_reader = WeatherFileReader(db_helper)
     file_reader.process_excel_baseline("pokhara_weather_seasonal_analysis.xlsx")
     file_reader.process_docx("pokhara_climate_report.docx")
+    file_reader.process_csv("pokhara_monthly_weather_historical.csv")
     
     # Fetching API key from environment variables
     api_key = os.getenv("API_KEY")
