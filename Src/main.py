@@ -31,9 +31,10 @@ def initializeApp():
     #Reading baseline data from Excel file
     print("Processing Data From different sources...")
     file_reader = WeatherFileReader(db_helper)
-    file_reader.process_excel_baseline("pokhara_weather_seasonal_analysis.xlsx")
+    file_reader.process_excel_seasonal_data("pokhara_weather_seasonal_analysis.xlsx")
     file_reader.process_docx("pokhara_climate_report.docx")
     file_reader.process_csv("pokhara_monthly_weather_historical.csv")
+    file_reader.process_excel_climate_baseline("pokhara_weather_seasonal_analysis.xlsx")
     
     # Fetching API key from environment variables
     api_key = os.getenv("API_KEY")

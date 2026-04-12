@@ -260,6 +260,40 @@ class DBHelper:
             return False
         finally:
             cursor.close()
+            
+    def insert_climate_baseline(self, month, month_name, normal_avg_temp_c, normal_max_temp_c,
+                             normal_min_temp_c, normal_precip_mm, normal_humidity_pct,
+                             normal_wind_ms, normal_cloud_cover_pct, normal_rainy_days):
+        cursor = self.mydb.cursor()
+        query = """
+            INSERT INTO climate_baseline
+            (month, month_name, normal_avg_temp_c, normal_max_temp_c, normal_min_temp_c,
+            normal_precip_mm, normal_humidity_pct, normal_wind_ms,
+            normal_cloud_cover_pct, normal_rainy_days)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                month_name             = VALUES(month_name),
+                normal_avg_temp_c      = VALUES(normal_avg_temp_c),
+                normal_max_temp_c      = VALUES(normal_max_temp_c),
+                normal_min_temp_c      = VALUES(normal_min_temp_c),
+                normal_precip_mm       = VALUES(normal_precip_mm),
+                normal_humidity_pct    = VALUES(normal_humidity_pct),
+                normal_wind_ms         = VALUES(normal_wind_ms),
+                normal_cloud_cover_pct = VALUES(normal_cloud_cover_pct),
+                normal_rainy_days      = VALUES(normal_rainy_days);
+        """
+        try:
+            values = (month, month_name, normal_avg_temp_c, normal_max_temp_c,
+                    normal_min_temp_c, normal_precip_mm, normal_humidity_pct,
+                    normal_wind_ms, normal_cloud_cover_pct, normal_rainy_days)
+            cursor.execute(query, values)
+            self.mydb.commit()
+            return True
+        except Exception as e:
+            print(f"Insert error (baseline month {month}): {e}")
+            return False
+        finally:
+            cursor.close()
 
     # Utility methods for debugging and verification
     def print_databases(self):

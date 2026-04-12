@@ -33,7 +33,7 @@ class WeatherFileReader:
         self.db_helper = db_helper
     
     # Process Excel file to extract season information and save to database
-    def process_excel_baseline(self, file_name):
+    def process_excel_seasonal_data(self, file_name):
         file_path = os.path.join(self.base_path, file_name)
         print(f"Processing Excel file: {file_path}")
         
@@ -138,4 +138,43 @@ class WeatherFileReader:
             return df
         except Exception as e:
             print(f"Error reading CSV file '{file_name}': {e}")
+            return None
+    
+    def process_excel_climate_baseline(self, file_name):
+        file_path = os.path.join(self.base_path, file_name)
+        print(f"Processing Excel file for climate baseline: {file_path}")
+        
+        try:
+            
+            df = pd.read_excel(file_path, sheet_name="Monthly Averages", skiprows=3)
+            print(f"Excel file '{file_name}' read successfully.")
+            
+            success_count = 0
+            failed_count = 0
+            
+            for _, row in df.iterrows():
+                month_num = DateConverter.to_number(str(row['Month']))
+                
+                success = self.db_helper.insert_climate_baseline(
+                    month=month_num,
+                    month_name=str(row['Month']),
+                    normal_avg_temp_c=float(row['Avg Temp (°C)']),
+                    normal_max_temp_c=float(row['Max Temp (°C)']),
+                    normal_min_temp_c=float(row['Min Temp (°C)']),
+                    normal_precip_mm=float(row['Total Precip (mm)']),
+                    normal_humidity_pct=int(row['Humidity (%)']),
+                    normal_wind_ms=float(row['Wind Speed (m/s)']),
+                    normal_cloud_cover_pct=int(row['Cloud Cover (%)']),
+                    normal_rainy_days=int(row['Rainy Days'])
+                )
+                
+                if(success):
+                    success_count += 1
+                else:
+                    failed_count += 1
+                    
+            print(f"Excel file '{file_name}' processed successfully. {success_count} records inserted, {failed_count} records failed.")
+            return df
+        except Exception as e:
+            print(f"Error reading Excel file '{file_name}': {e}")
             return None
