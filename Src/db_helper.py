@@ -294,6 +294,63 @@ class DBHelper:
             return False
         finally:
             cursor.close()
+            
+    # Inster daily forecast data into the 'daily_forecast' table with a reference to the corresponding season based on the month of the forecast date
+    def insert_daily_forecast(self, forecast_date, year, month, month_name,
+                           avg_temp_c, max_temp_c, min_temp_c, precip_mm,
+                           precip_probability_pct, humidity_pct, wind_speed_ms,
+                           wind_gust_ms, wind_direction, cloud_cover_pct,
+                           visibility_km, uv_index, dewpoint_c, pressure_hpa,
+                           weather_description, data_source):
+        cursor = self.mydb.cursor()
+
+        # Resolve season_id from month
+        season = self.get_season_by_month(month)
+        season_id = season["season_id"] if season else None
+
+        query = """
+            INSERT INTO daily_forecast
+            (season_id, forecast_date, year, month, month_name, avg_temp_c,
+            max_temp_c, min_temp_c, precip_mm, precip_probability_pct,
+            humidity_pct, wind_speed_ms, wind_gust_ms, wind_direction,
+            cloud_cover_pct, visibility_km, uv_index, dewpoint_c,
+            pressure_hpa, weather_description, data_source)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                season_id               = VALUES(season_id),
+                avg_temp_c              = VALUES(avg_temp_c),
+                max_temp_c              = VALUES(max_temp_c),
+                min_temp_c              = VALUES(min_temp_c),
+                precip_mm               = VALUES(precip_mm),
+                precip_probability_pct  = VALUES(precip_probability_pct),
+                humidity_pct            = VALUES(humidity_pct),
+                wind_speed_ms           = VALUES(wind_speed_ms),
+                wind_gust_ms            = VALUES(wind_gust_ms),
+                wind_direction          = VALUES(wind_direction),
+                cloud_cover_pct         = VALUES(cloud_cover_pct),
+                visibility_km           = VALUES(visibility_km),
+                uv_index                = VALUES(uv_index),
+                dewpoint_c              = VALUES(dewpoint_c),
+                pressure_hpa            = VALUES(pressure_hpa),
+                weather_description     = VALUES(weather_description),
+                data_source             = VALUES(data_source);
+        """
+        try:
+            values = (season_id, forecast_date, year, month, month_name,
+                    avg_temp_c, max_temp_c, min_temp_c, precip_mm,
+                    precip_probability_pct, humidity_pct, wind_speed_ms,
+                    wind_gust_ms, wind_direction, cloud_cover_pct,
+                    visibility_km, uv_index, dewpoint_c, pressure_hpa,
+                    weather_description, data_source)
+            cursor.execute(query, values)
+            self.mydb.commit()
+            return True
+        except Exception as e:
+            print(f"Insert error (forecast {forecast_date}): {e}")
+            return False
+        finally:
+            cursor.close()
 
     # Utility methods for debugging and verification
     def print_databases(self):

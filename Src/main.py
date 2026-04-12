@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from db_helper import DBHelper
 from api_client import WetherAPIClient
-from file_reader import WeatherFileReader
+from data_processor import WeatherDataProcessor
 
 def main():
     initializeApp()
@@ -30,18 +30,18 @@ def initializeApp():
     
     #Reading baseline data from Excel file
     print("Processing Data From different sources...")
-    file_reader = WeatherFileReader(db_helper)
-    file_reader.process_excel_seasonal_data("pokhara_weather_seasonal_analysis.xlsx")
-    file_reader.process_docx("pokhara_climate_report.docx")
-    file_reader.process_csv("pokhara_monthly_weather_historical.csv")
-    file_reader.process_excel_climate_baseline("pokhara_weather_seasonal_analysis.xlsx")
+    data_processor = WeatherDataProcessor(db_helper)
+    data_processor.process_excel_seasonal_data("pokhara_weather_seasonal_analysis.xlsx")
+    data_processor.process_docx("pokhara_climate_report.docx")
+    data_processor.process_csv("pokhara_monthly_weather_historical.csv")
+    data_processor.process_excel_climate_baseline("pokhara_weather_seasonal_analysis.xlsx")
     
     # Fetching API key from environment variables
     api_key = os.getenv("API_KEY")
     print("API key loaded successfully... ")
     # Creating an instance of WetherAPIClient with the loaded API key
     api_client = WetherAPIClient(api_key)
-    # api_client.get_current_forcase()   
+    data_processor.process_api(api_client)
     
 
     

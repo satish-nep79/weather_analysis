@@ -26,7 +26,7 @@ class DateConverter:
 print(DateConverter.to_number("Jan"))
 
 
-class WeatherFileReader:
+class WeatherDataProcessor:
     def __init__(self, db_helper):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         self.base_path = os.path.join(base_dir, "..", "resources")
@@ -177,4 +177,54 @@ class WeatherFileReader:
             return df
         except Exception as e:
             print(f"Error reading Excel file '{file_name}': {e}")
+            return None
+    
+    def process_api(self, api_client):
+        print("Fetching forecast data from API...")
+        try:
+            raw_data = api_client.get_current_forecast()
+            if not raw_data:
+                print("No data returned from API.")
+                return None
+
+            print("Parsing API data...")
+            records = api_client.parse_forecast(raw_data)
+
+            success_count = 0
+            failed_count = 0
+
+            print("Inserting API data into database...")
+            for record in records:
+                success = self.db_helper.insert_daily_forecast(
+                    forecast_date=          record["forecast_date"],
+                    year=                   record["year"],
+                    month=                  record["month"],
+                    month_name=             record["month_name"],
+                    avg_temp_c=             record["avg_temp_c"],
+                    max_temp_c=             record["max_temp_c"],
+                    min_temp_c=             record["min_temp_c"],
+                    precip_mm=              record["precip_mm"],
+                    precip_probability_pct= record["precip_probability_pct"],
+                    humidity_pct=           record["humidity_pct"],
+                    wind_speed_ms=          record["wind_speed_ms"],
+                    wind_gust_ms=           record["wind_gust_ms"],
+                    wind_direction=         record["wind_direction"],
+                    cloud_cover_pct=        record["cloud_cover_pct"],
+                    visibility_km=          record["visibility_km"],
+                    uv_index=               record["uv_index"],
+                    dewpoint_c=             record["dewpoint_c"],
+                    pressure_hpa=           record["pressure_hpa"],
+                    weather_description=    record["weather_description"],
+                    data_source=            record["data_source"]
+                )
+                if success:
+                    success_count += 1
+                else:
+                    failed_count += 1
+
+            print(f"API processing completed. {success_count} inserted, {failed_count} failed.")
+            return records
+
+        except Exception as e:
+            print(f"Error processing API data: {e}")
             return None
