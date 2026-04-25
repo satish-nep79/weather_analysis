@@ -2,6 +2,7 @@
 from analytics.descriptive_analytics import DescriptiveAnalytics
 from analytics.predictive_analysis import PredictiveAnalytics
 from analytics.prescriptive_analysis import PrescriptiveAnalytics
+from analytics.kpi_analysis import KPIAnalytics
 
 
 class DataAnalyser:
@@ -19,4 +20,8 @@ class DataAnalyser:
     def run_prescriptive_analysis(self):
         pra = PrescriptiveAnalytics(self.db_helper)
         pra.run()
+    
+    def run_kpi_analysis(self):
+        kpi = KPIAnalytics(self.db_helper)
+        kpi.run()
 

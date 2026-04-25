@@ -48,6 +48,7 @@ def initializeApp():
     # analyser.run_descriptive_analysis()
     analyser.run_predictive_analysis()
     analyser.run_prescriptive_analysis()
+    analyser.run_kpi_analysis()
     
 
     
