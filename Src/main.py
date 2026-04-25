@@ -28,6 +28,7 @@ def main():
     analyser.run_predictive_analysis()
     analyser.run_prescriptive_analysis()
     analyser.run_kpi_analysis()
+    analyser.run_benchmarking()
 
 
 if __name__ == "__main__":

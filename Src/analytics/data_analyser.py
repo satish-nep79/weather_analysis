@@ -1,7 +1,8 @@
-from analytics.descriptive_analytics import DescriptiveAnalytics
+from analytics.descriptive_analysis import DescriptiveAnalytics
 from analytics.predictive_analysis import PredictiveAnalytics
 from analytics.prescriptive_analysis import PrescriptiveAnalytics
 from analytics.kpi_analysis import KPIAnalytics
+from analytics.benchmarking import BenchmarkingAnalytics
 
 
 class DataAnalyser:
@@ -23,3 +24,7 @@ class DataAnalyser:
     def run_kpi_analysis(self):
         kpi = KPIAnalytics(self.db_helper)
         kpi.run()
+    
+    def run_benchmarking(self):
+        bm = BenchmarkingAnalytics(self.db_helper)
+        bm.run()
