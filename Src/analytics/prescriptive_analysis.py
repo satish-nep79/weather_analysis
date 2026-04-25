@@ -96,8 +96,8 @@ class PrescriptiveAnalytics:
         ax.legend(handles=patches, loc="lower right", fontsize=9)
 
         plt.tight_layout()
-        plt.show()
         ChartSaver.save_analysis_image(fig, "pres_tourism_score_bar.png")
+        plt.show()
         return fig
 
     def run(self):

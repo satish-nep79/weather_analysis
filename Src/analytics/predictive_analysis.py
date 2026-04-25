@@ -24,50 +24,61 @@ class PredictiveAnalytics:
         return df
 
     def plot_temperature_trend(self, df):
-        # Create a simple time index (0, 1, 2, ... for each month)
         df = df.copy()
         df["time_index"] = range(len(df))
 
         X = df["time_index"].values.reshape(-1, 1)
         y = df["avg_temp_c"].values
 
-        # Train a simple linear regression model
+        # Fit linear regression to get the overall trend direction
         model = LinearRegression()
         model.fit(X, y)
         trend_line = model.predict(X)
 
-        # Predict the next 12 months
-        last_index = df["time_index"].max()
-        future_indices = np.arange(last_index + 1, last_index + 13).reshape(-1, 1)
-        future_preds   = model.predict(future_indices)
+        # Calculate the average temperature for each month (Jan-Dec)
+        monthly_avg = df.groupby("month")["avg_temp_c"].mean()
 
-        # Build dates for the x-axis
-        hist_dates   = pd.to_datetime(df["year"].astype(str) + "-" + df["month"].astype(str).str.zfill(2) + "-01")
-        last_year    = df["year"].iloc[-1]
-        last_month   = df["month"].iloc[-1]
-        future_dates = pd.date_range(
-            start=pd.Timestamp(year=last_year, month=last_month, day=1) + pd.DateOffset(months=1),
-            periods=12,
-            freq="MS"
-        )
+        # Predict next 24 months using monthly average + trend adjustment
+        last_year       = int(df["year"].iloc[-1])
+        last_month      = int(df["month"].iloc[-1])
+        trend_per_month = model.coef_[0]
+        future_preds    = []
+        future_dates    = []
+        for i in range(1, 25):
+            raw        = last_month + i
+            next_month = ((raw - 1) % 12) + 1
+            next_year  = last_year + (raw - 1) // 12
+            base_avg   = monthly_avg[next_month]
+            predicted  = base_avg + trend_per_month * i
+            future_preds.append(round(predicted, 2))
+            future_dates.append(pd.Timestamp(year=next_year, month=next_month, day=1))
+
+        # Build historical dates for x-axis
+        hist_dates = pd.to_datetime(df["year"].astype(str) + "-" + df["month"].astype(str).str.zfill(2) + "-01")
 
         # Plot
-        fig, ax = plt.subplots(figsize=(14, 5))
+        fig, ax = plt.subplots(figsize=(18, 5))
         ax.plot(hist_dates, y, color="#4A90D9", linewidth=1.2, alpha=0.6, label="Historical Avg Temp")
-        ax.plot(hist_dates, trend_line, color="#F5A623", linewidth=2, linestyle="--", label="Trend Line")
-        ax.plot(future_dates, future_preds, color="#D0021B", linewidth=2, linestyle="-.", label="Predicted (next 12 months)")
+        ax.plot(hist_dates, trend_line, color="#F5A623", linewidth=2, linestyle="--", label="Overall Trend")
+        # Connect prediction to last historical point so there's no gap
+        connect_dates = [hist_dates.iloc[-1]] + future_dates
+        connect_preds = [y[-1]] + future_preds
+        ax.plot(connect_dates, connect_preds, color="#D0021B", linewidth=2, linestyle="--", label="Predicted (next 24 months)")
         ax.axvline(future_dates[0], color="#D0021B", linewidth=1, linestyle=":", alpha=0.5)
+        ax.set_xlim(hist_dates.iloc[0], future_dates[-1] + pd.DateOffset(months=2))
 
         direction = "rising" if model.coef_[0] > 0 else "falling"
-        ax.set_title(f"Temperature Trend & 12-Month Prediction — Pokhara  ({direction} trend)", fontsize=13, fontweight="bold")
+        ax.set_title(f"Temperature Trend & 24-Month Prediction - Pokhara ({direction} trend)", fontsize=13, fontweight="bold")
         ax.set_xlabel("Date")
-        ax.set_ylabel("Avg Temperature (°C)")
+        ax.set_ylabel("Avg Temperature (C)")
         ax.legend(fontsize=10)
         ax.grid(axis="y", linestyle="--", alpha=0.4)
         fig.autofmt_xdate()
         plt.tight_layout()
-        plt.show()
+
+        # Save BEFORE show — calling show() clears the figure
         ChartSaver.save_analysis_image(fig, "pred_temperature_trend.png")
+        plt.show()
         return fig
 
     def run(self):

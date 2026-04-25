@@ -86,8 +86,8 @@ class KPIAnalytics:
                     cbar_kws={"label": "Correlation Coefficient"})
         ax.set_title("Correlation Between Weather Variables - Pokhara", fontsize=13, fontweight="bold")
         plt.tight_layout()
-        plt.show()
         ChartSaver.save_analysis_image(fig, "kpi_correlation_heatmap.png")
+        plt.show()
         return fig
 
     def run(self):

@@ -51,8 +51,8 @@ class DescriptiveAnalytics:
         ax.bar_label(bars, fmt="%.1f°", padding=3, fontsize=9)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
-        plt.show()
         ChartSaver.save_analysis_image(fig, "desc_monthly_temperature.png")
+        plt.show()
         return fig
 
     def run(self):

@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from db_helper import DBHelper
 from api_client import WeatherAPIClient
 from data_processor import WeatherDataProcessor
-from analytics.coordinator import DataAnalyser
+from analytics.data_analyser import DataAnalyser
 
 
 def main():
