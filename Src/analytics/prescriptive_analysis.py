@@ -26,16 +26,16 @@ class PrescriptiveAnalytics:
         rows = cursor.fetchall()
         cursor.close()
         df = pd.DataFrame(rows)
-        df["avg_temp_c"]      = df["avg_temp_c"].astype(float)
-        df["total_precip_mm"] = df["total_precip_mm"].astype(float)
-        df["avg_humidity_pct"]= df["avg_humidity_pct"].astype(float)
-        df["rainy_days"]      = df["rainy_days"].astype(float)
+        df["avg_temp_c"]       = df["avg_temp_c"].astype(float)
+        df["total_precip_mm"]  = df["total_precip_mm"].astype(float)
+        df["avg_humidity_pct"] = df["avg_humidity_pct"].astype(float)
+        df["rainy_days"]       = df["rainy_days"].astype(float)
         return df
 
     def score_month(self, row):
         score = 0
 
-        # Temperature: 15–25°C is ideal for tourists
+        # Temperature: 15-25 degrees is ideal for tourists
         if 15 <= row["avg_temp_c"] <= 25:
             score += 30
         elif 10 <= row["avg_temp_c"] < 15 or 25 < row["avg_temp_c"] <= 30:
@@ -87,8 +87,8 @@ class PrescriptiveAnalytics:
         ax.bar_label(bars, labels=[f"{v}" for v in df["score"]], padding=5, fontsize=10, fontweight="bold")
 
         ax.set_xlim(0, 115)
-        ax.set_xlabel("Tourism Suitability Score (0–100)", fontsize=11)
-        ax.set_title("Best Months to Visit Pokhara — Tourism Suitability Score", fontsize=13, fontweight="bold")
+        ax.set_xlabel("Tourism Suitability Score (0-100)", fontsize=11)
+        ax.set_title("Best Months to Visit Pokhara - Tourism Suitability Score", fontsize=13, fontweight="bold")
         ax.invert_yaxis()
         ax.grid(axis="x", linestyle="--", alpha=0.3)
 
@@ -111,14 +111,28 @@ class PrescriptiveAnalytics:
         df["score"]          = df.apply(self.score_month, axis=1)
         df["recommendation"] = df["score"].apply(self.get_recommendation)
 
-        print("\n===== PRESCRIPTIVE SUMMARY — Best Months to Visit Pokhara =====")
+        print("\n===== PRESCRIPTIVE SUMMARY - Best Months to Visit Pokhara =====")
         df_sorted = df.sort_values("score", ascending=False)
         for _, row in df_sorted.iterrows():
-            print(f"  {row['month_name']:<12}  Score: {row['score']:>3}  →  {row['recommendation']}")
-        best = df_sorted.iloc[0]
+            print(f"  {row['month_name']:<12}  Score: {row['score']:>3}  ->  {row['recommendation']}")
+
+        best  = df_sorted.iloc[0]
         worst = df_sorted.iloc[-1]
-        print(f"\n  ✅ Best month  : {best['month_name']} (score {best['score']})")
-        print(f"  ❌ Avoid       : {worst['month_name']} (score {worst['score']})")
+        not_recommended = df[df["recommendation"] == "Not Recommended"]["month_name"].tolist()
+        acceptable      = df[df["recommendation"] == "Acceptable"]["month_name"].tolist()
+
+        print(f"\n  Best month  : {best['month_name']} (score {best['score']})")
+        print(f"  Avoid       : {worst['month_name']} (score {worst['score']})")
+
+        print("\n--- DECISIONS & RECOMMENDATIONS ---")
+        if not_recommended:
+            print(f"  Trekking agencies should pause outdoor operations in: {', '.join(not_recommended)}")
+            print(f"  Reason: Heavy monsoon rainfall and poor visibility make these months unsafe for trekking.")
+        if acceptable:
+            print(f"  Hotels and tour operators should offer discounted rates in: {', '.join(acceptable)}")
+            print(f"  Reason: Weather is borderline - discounts can attract budget travellers despite conditions.")
+        print(f"  Peak season staffing should be planned for: {best['month_name']} and surrounding months.")
+        print(f"  Reason: Highest suitability score ({best['score']}/100) - maximum tourist footfall expected.")
         print("=" * 60 + "\n")
 
         self.plot_tourism_score_bar(df)
