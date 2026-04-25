@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 from db_helper import DBHelper
 from api_client import WetherAPIClient
 from data_processor import WeatherDataProcessor
+from analytics.coordinator import DataAnalyser
 
 def main():
     initializeApp()
     print("Project initialized successfully...")
+    DataAnalyser.run_descriptive_analysis()
 
     
 

@@ -2,16 +2,13 @@ import docx2txt
 import re
 import json
 
+from constants import Constants
+
 class DocProcessor:
     def __init__(self, document_text):
         self.document_text = document_text
         # Mapping of season keywords to standardized season names
-        self.season_map  = {
-        "Winter":       "Winter",
-        "Pre-Monsoon":  "Pre-Monsoon",
-        "Monsoon":      "Monsoon",
-        "Post-Monsoon": "Post-Monsoon"
-    }
+        self.season_map  = Constants.SEASON_MAP
         
     # Detect season headings like "2.1 Winter (December – February)"
     def detect_season(self, line):

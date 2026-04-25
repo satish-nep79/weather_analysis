@@ -43,10 +43,16 @@ class WeatherDataProcessor:
             print(f"Excel file '{file_name}' read successfully.")
             
             print("Iterating through rows to insert season data into database...")
+            
+            success_count = 0
+            failed_count = 0
+            
             for _, row in df.iterrows():
                 months_range = row['Months'].split('–')
                 month_start = DateConverter.to_number(months_range[0].strip())
                 month_end = DateConverter.to_number(months_range[1].strip())
+                
+                
                 
                 success = self.db_helper.insert_season(
                     name=row['Season'],
@@ -62,12 +68,10 @@ class WeatherDataProcessor:
                     )
                 
                 if success:
-                    print(f"Inserted season '{row['Season']}' into database successfully.")
+                    success_count += 1
                 else:
-                    print(f"Failed to insert season '{row['Season']}' into database.")
-            print("Excel file processing completed.")
-            
-            print("Data from Excel file stored in the database successfully.")
+                    failed_count += 1
+            print(f"Excel file '{file_name}' processed successfully. {success_count} records inserted, {failed_count} records failed.")
             
             return df
         except Exception as e:
