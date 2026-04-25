@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from analytics.save_charts import ChartSaver
+from analytics.analysis_exporter import AnalysisExporter
 
 
 class DescriptiveAnalytics:
@@ -51,7 +51,7 @@ class DescriptiveAnalytics:
         ax.bar_label(bars, fmt="%.1f°", padding=3, fontsize=9)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
-        ChartSaver.save_analysis_image(fig, "desc_monthly_temperature.png")
+        AnalysisExporter.save_image(fig, "desc_monthly_temperature.png")
         plt.show()
         return fig
 

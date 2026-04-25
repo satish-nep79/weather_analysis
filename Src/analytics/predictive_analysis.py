@@ -2,17 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-from analytics.save_charts import ChartSaver
+from analytics.analysis_exporter import AnalysisExporter
 
 
 class PredictiveAnalytics:
 
     def __init__(self, db_helper):
         self.db = db_helper
-
-    # ------------------------------------------------------------------ #
-    #  Load Data                                                           #
-    # ------------------------------------------------------------------ #
 
     def load_historical(self):
         cursor = self.db.mydb.cursor(dictionary=True)
@@ -39,28 +35,21 @@ class PredictiveAnalytics:
         cursor.close()
         df = pd.DataFrame(rows)
         if not df.empty:
-            df["avg_temp_c"] = df["avg_temp_c"].astype(float)
-            df["precip_mm"]  = df["precip_mm"].astype(float)
+            df["avg_temp_c"]             = df["avg_temp_c"].astype(float)
+            df["precip_mm"]              = df["precip_mm"].astype(float)
             df["precip_probability_pct"] = df["precip_probability_pct"].astype(int)
-            df["forecast_date"] = pd.to_datetime(df["forecast_date"])
+            df["forecast_date"]          = pd.to_datetime(df["forecast_date"])
         return df
 
-    # ------------------------------------------------------------------ #
-    #  Chart — API Forecast vs Historical Baseline                         #
-    # ------------------------------------------------------------------ #
-
     def plot_forecast_vs_baseline(self, df_hist, df_forecast):
-        # Calculate the long-run monthly average from historical data
         monthly_avg = df_hist.groupby("month")["avg_temp_c"].mean()
 
-        # Map historical baseline onto each forecast day using its month
         df_forecast = df_forecast.copy()
         df_forecast["historical_avg"] = df_forecast["month"].map(monthly_avg)
         df_forecast["anomaly"]        = (df_forecast["avg_temp_c"] - df_forecast["historical_avg"]).round(2)
 
         fig, axes = plt.subplots(2, 1, figsize=(14, 8))
 
-        # --- Top panel: Forecast temp vs historical average ---
         ax1 = axes[0]
         ax1.plot(df_forecast["forecast_date"], df_forecast["avg_temp_c"],
                  color="#D0021B", linewidth=2, marker="o", markersize=5, label="API Forecast Temp")
@@ -79,7 +68,6 @@ class PredictiveAnalytics:
         ax1.legend(fontsize=9)
         ax1.grid(axis="y", linestyle="--", alpha=0.4)
 
-        # --- Bottom panel: Precipitation probability ---
         ax2 = axes[1]
         bar_colors = ["#7ED321" if p < 40 else "#F5A623" if p < 70 else "#D0021B"
                       for p in df_forecast["precip_probability_pct"]]
@@ -95,13 +83,9 @@ class PredictiveAnalytics:
 
         fig.autofmt_xdate()
         plt.tight_layout()
-        ChartSaver.save_analysis_image(fig, "pred_forecast_vs_baseline.png")
+        AnalysisExporter.save_image(fig, "pred_forecast_vs_baseline.png")
         plt.show()
         return fig, df_forecast
-
-    # ------------------------------------------------------------------ #
-    #  Print Anomaly Summary                                               #
-    # ------------------------------------------------------------------ #
 
     def print_forecast_summary(self, df_forecast):
         if df_forecast.empty:
@@ -120,7 +104,6 @@ class PredictiveAnalytics:
             prob    = row["precip_probability_pct"]
             desc    = row["weather_description"]
 
-            # Anomaly flag
             if anomaly > 1.5:
                 anomaly_flag = "WARMER than normal"
             elif anomaly < -1.5:
@@ -128,7 +111,6 @@ class PredictiveAnalytics:
             else:
                 anomaly_flag = "Normal range"
 
-            # Decision
             if prob > 70 or row["precip_mm"] > 10:
                 decision = "Advise trekkers to postpone"
             elif anomaly > 2:
@@ -139,16 +121,11 @@ class PredictiveAnalytics:
             print(f"  {date:<14} {temp:>8.1f}C  {base:>10.1f}C  {anomaly:>+8.1f}C  {prob:>5}%  {decision}")
             print(f"  {'':14} {desc}")
 
-        # Overall summary
-        avg_anomaly = df_forecast["anomaly"].mean()
+        avg_anomaly    = df_forecast["anomaly"].mean()
         high_rain_days = (df_forecast["precip_probability_pct"] > 70).sum()
         print(f"\n  Overall: Forecast is {avg_anomaly:+.1f}C vs historical average")
         print(f"  High rain risk days: {high_rain_days} out of {len(df_forecast)} forecast days")
         print()
-
-    # ------------------------------------------------------------------ #
-    #  Run                                                                 #
-    # ------------------------------------------------------------------ #
 
     def run(self):
         print("\n>>> Running Predictive Analytics...")

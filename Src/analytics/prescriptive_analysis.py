@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from analytics.save_charts import ChartSaver
+from analytics.analysis_exporter import AnalysisExporter
 
 
 class PrescriptiveAnalytics:
@@ -96,7 +96,7 @@ class PrescriptiveAnalytics:
         ax.legend(handles=patches, loc="lower right", fontsize=9)
 
         plt.tight_layout()
-        ChartSaver.save_analysis_image(fig, "pres_tourism_score_bar.png")
+        AnalysisExporter.save_image(fig, "pres_tourism_score_bar.png")
         plt.show()
         return fig
 
