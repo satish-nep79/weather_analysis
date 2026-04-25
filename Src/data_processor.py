@@ -23,8 +23,6 @@ class DateConverter:
             return "Invalid Month"
     
 
-print(DateConverter.to_number("Jan"))
-
 
 class WeatherDataProcessor:
     def __init__(self, db_helper):

@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from analytics.coordinator import DataAnalyser
+from analytics.save_charts import ChartSaver
 from constants import Constants
 
 class DescriptiveAnalytics:
@@ -57,12 +57,15 @@ class DescriptiveAnalytics:
         fig, ax = plt.subplots(figsize=(12, 5))
         bars = ax.bar(monthly["month_name"], monthly["avg_temp_c"],
                       color=sns.color_palette("coolwarm", 12))
-        ax.set_title("Average Monthly Temperature (2010–2024)", fontsize=14)
+        ax.set_title(f"Average Monthly Temperature ({df['year'].min()}–{df['year'].max()})", fontsize=14)
         ax.set_xlabel("Month")
         ax.set_ylabel("Avg Temperature (°C)")
         ax.bar_label(bars, fmt="%.1f°", padding=3, fontsize=8)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
+        plt.plot()  # Ensure the plot is rendered before saving
+        plt.show()  # Show the plot before saving
+        ChartSaver.save_analysis_image(fig, "desc_monthly_temperature.png")
         return fig
 
     def plot_monthly_precipitation(self, df):
@@ -73,13 +76,15 @@ class DescriptiveAnalytics:
         fig, ax = plt.subplots(figsize=(12, 5))
         bars = ax.bar(monthly["month_name"], monthly["total_precip_mm"],
                       color=sns.color_palette("Blues_d", 12))
-        ax.set_title("Average Monthly Precipitation (2010–2024)", fontsize=14)
+        ax.set_title(f"Average Monthly Precipitation ({df['year'].min()}–{df['year'].max()})", fontsize=14)
         ax.set_xlabel("Month")
         ax.set_ylabel("Total Precipitation (mm)")
         ax.bar_label(bars, fmt="%.0f mm", padding=3, fontsize=8)
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
-        save(fig, "desc_monthly_precipitation.png")
+        plt.plot()  # Ensure the plot is rendered before saving
+        plt.show()  # Show the plot before saving
+        ChartSaver.save_analysis_image(fig, "desc_monthly_precipitation.png")
 
     def plot_seasonal_comparison(self, df):
         """Grouped bar chart — seasonal averages for temp, precip, humidity."""
@@ -87,7 +92,8 @@ class DescriptiveAnalytics:
             avg_temp   = ("avg_temp_c",          "mean"),
             avg_precip = ("total_precip_mm",      "mean"),
             avg_humid  = ("avg_humidity_pct",     "mean")
-        ).reindex(Constants.SEASON_ORDER).reset_index()
+        ).round(2)
+        seasonal = seasonal.reindex(Constants.SEASON_ORDER).reset_index()
 
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
         metrics = [
@@ -103,9 +109,12 @@ class DescriptiveAnalytics:
             ax.bar_label(bars, fmt="%.1f", padding=3, fontsize=9)
             plt.setp(ax.get_xticklabels(), rotation=20, ha="right")
 
-        fig.suptitle("Seasonal Weather Comparison (2010–2024)", fontsize=14, y=1.02)
+        fig.suptitle(f"Seasonal Weather Comparison ({df['year'].min()}–{df['year'].max()})", fontsize=14, y=1.02)
         plt.tight_layout()
-        save(fig, "desc_seasonal_comparison.png")
+        plt.subplots_adjust(top=0.9)
+        plt.plot()  # Ensure the plot is rendered before saving
+        plt.show()  # Show the plot before saving
+        ChartSaver.save_analysis_image(fig, "desc_seasonal_comparison.png")
 
     def plot_heatmap(self, df):
         """Heatmap — average temperature by month and year."""
@@ -118,13 +127,15 @@ class DescriptiveAnalytics:
         fig, ax = plt.subplots(figsize=(14, 7))
         sns.heatmap(pivot, annot=True, fmt=".1f", cmap="RdYlBu_r",
                     linewidths=0.5, ax=ax, cbar_kws={"label": "°C"})
-        ax.set_title("Monthly Average Temperature Heatmap (°C) — 2010 to 2024", fontsize=14)
+        ax.set_title(f"Monthly Average Temperature Heatmap (°C) — {df['year'].min()} to {df['year'].max()}", fontsize=14)
         ax.set_xlabel("Month")
         ax.set_ylabel("Year")
         plt.tight_layout()
-        save(fig, "desc_temp_heatmap.png")
+        plt.plot()  # Ensure the plot is rendered before saving
+        plt.show()  # Show the plot before saving
+        ChartSaver.save_analysis_image(fig, "desc_temp_heatmap.png")
 
-    def run(self, save):
+    def run(self):
         print("\n>>> Running Descriptive Analytics...")
         df = self.load_data()
         self.summary_statistics(df)

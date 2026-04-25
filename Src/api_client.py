@@ -4,7 +4,7 @@ import json
 
 import requests
 
-class WetherAPIClient:
+class WeatherAPIClient:
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.weatherbit.io/v2.0"

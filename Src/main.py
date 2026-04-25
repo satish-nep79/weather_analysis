@@ -1,14 +1,13 @@
 import os
 from dotenv import load_dotenv
 from db_helper import DBHelper
-from api_client import WetherAPIClient
+from api_client import WeatherAPIClient
 from data_processor import WeatherDataProcessor
 from analytics.coordinator import DataAnalyser
 
 def main():
     initializeApp()
     print("Project initialized successfully...")
-    DataAnalyser.run_descriptive_analysis()
 
     
 
@@ -42,8 +41,13 @@ def initializeApp():
     api_key = os.getenv("API_KEY")
     print("API key loaded successfully... ")
     # Creating an instance of WetherAPIClient with the loaded API key
-    api_client = WetherAPIClient(api_key)
+    api_client = WeatherAPIClient(api_key)
     data_processor.process_api(api_client)
+    
+    analyser = DataAnalyser(db_helper)
+    # analyser.run_descriptive_analysis()
+    analyser.run_predictive_analysis()
+    analyser.run_prescriptive_analysis()
     
 
     
